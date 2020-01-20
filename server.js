@@ -8,7 +8,8 @@ const MOVIEDEX = require('./movies-data.json');
 const app = express();
 
 // middlewares
-app.use(morgan('common'));
+const morganSetting = process.env.NODE_DEV === 'production' ? 'tiny' : 'common';
+app.use(morgan(morganSetting));
 app.use(helmet());
 app.use(cors());
 app.use(function validateBearerToken(req, res, next) {
@@ -19,6 +20,16 @@ app.use(function validateBearerToken(req, res, next) {
     }
     next();
 });
+// error handling middleware
+app.use((error, req, res, next) => {
+    let response;
+    if (process.env.NODE_ENV === 'production') {
+        response = { error: { message: 'server error' }};
+    } else {
+        response = { error };
+    }
+    res.status(500).json(response);
+  })
 
 app.get('/movies', (req, res) => {
     let response = MOVIEDEX;
@@ -55,6 +66,5 @@ app.get('/movies', (req, res) => {
     res.json(response);
 });
 
-app.listen(8000, () => {
-    console.log('Server started on PORT 8000');
-});
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {});
